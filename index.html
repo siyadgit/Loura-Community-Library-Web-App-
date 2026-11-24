@@ -1,0 +1,299 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenLibrary | Community Library</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;background:#f5f6fa;color:#20243a}
+header{background:#171b36;color:white;padding:22px 7%;display:flex;
+justify-content:space-between;align-items:center;flex-wrap:wrap;gap:15px}
+.logo{font-size:25px;font-weight:bold}
+.logo span{color:#9b8cff}
+.hero{text-align:center;padding:55px 20px;background:linear-gradient(130deg,#242653,#6655b9);color:white}
+.hero h1{font-size:36px;margin-bottom:12px}
+.hero p{color:#ddd;margin-bottom:22px}
+.search{width:min(500px,90%);padding:15px;border:0;border-radius:10px;font-size:16px}
+.container{max-width:1150px;margin:35px auto;padding:0 20px}
+.section-title{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+button{cursor:pointer;border:0;border-radius:8px;padding:12px 18px;font-weight:bold}
+.primary{background:#705ce4;color:white}
+.primary:hover{background:#5542c5}
+.upload-box{background:white;padding:25px;border-radius:15px;margin-bottom:35px;box-shadow:0 4px 20px #1720440c}
+input,textarea,select{width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;margin:8px 0 15px;font-size:15px}
+label{font-size:14px;font-weight:bold}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px}
+.book{background:white;border-radius:13px;overflow:hidden;box-shadow:0 4px 15px #17204410;display:flex;flex-direction:column}
+.cover{height:175px;background:linear-gradient(140deg,#302c70,#9c80db);display:flex;align-items:center;justify-content:center;color:white;font-size:55px}
+.book-info{padding:17px;flex:1;display:flex;flex-direction:column}
+.book-info h3{font-size:18px;margin-bottom:7px;overflow-wrap:anywhere}
+.book-info p{color:#777;font-size:13px;margin-bottom:9px;overflow-wrap:anywhere}
+.book-info .desc{line-height:1.5;flex:1}
+.book-actions{display:flex;gap:8px;margin-top:15px}
+.book-actions button{flex:1;font-size:12px;padding:10px 5px}
+.download{background:#e9e5ff;color:#5943c6}
+.empty{text-align:center;padding:45px;color:#888;grid-column:1/-1}
+.status{font-size:13px;margin:8px 0;color:#705ce4}
+footer{text-align:center;padding:28px;background:#171b36;color:#bbb;margin-top:50px}
+.hidden{display:none}
+@media(max-width:600px){.hero h1{font-size:28px}header{padding:18px 5%}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">📚 Open<span>Library</span></div>
+  <div>FREE COMMUNITY BOOKS</div>
+</header>
+
+<section class="hero">
+  <h1>Discover. Read. Share.</h1>
+  <p>A free community library where everyone can share knowledge.</p>
+  <input class="search" id="search" placeholder="🔍 Search books or authors...">
+</section>
+
+<main class="container">
+
+<section class="upload-box">
+  <div class="section-title">
+    <h2>📤 Share a Book</h2>
+    <span>Free community uploads</span>
+  </div>
+  <form id="uploadForm">
+    <label>Book Title *</label>
+    <input id="title" required placeholder="Enter book title">
+
+    <label>Author *</label>
+    <input id="author" required placeholder="Author name">
+
+    <label>Category</label>
+    <select id="category">
+      <option>Education</option>
+      <option>Technology</option>
+      <option>Science</option>
+      <option>Fiction</option>
+      <option>History</option>
+      <option>Business</option>
+      <option>Other</option>
+    </select>
+
+    <label>Description</label>
+    <textarea id="description" rows="3" placeholder="About this book..."></textarea>
+
+    <label>Select Book File (PDF, EPUB, DOC, etc.) *</label>
+    <input type="file" id="bookFile" accept=".pdf,.epub,.doc,.docx,.txt" required>
+
+    <button class="primary" id="uploadBtn" type="submit">Upload Book</button>
+    <p class="status" id="uploadStatus"></p>
+  </form>
+</section>
+
+<section>
+  <div class="section-title">
+    <h2>📖 Explore Library</h2>
+    <span id="bookCount">Loading books...</span>
+  </div>
+  <div class="grid" id="bookGrid">
+    <div class="empty">Loading library...</div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <h3>📚 OpenLibrary</h3>
+  <p>Knowledge belongs to everyone.</p>
+  <p style="margin-top:10px">Built for a community that loves reading.</p>
+</footer>
+
+<script>
+// 1. ADD YOUR SUPABASE PROJECT DETAILS
+const SUPABASE_URL = "YOUR_SUPABASE_PROJECT_URL";
+const SUPABASE_KEY = "YOUR_SUPABASE_ANON_KEY";
+
+const configured =
+  !SUPABASE_URL.includes("YOUR_") &&
+  !SUPABASE_KEY.includes("YOUR_");
+
+const db = configured
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+  : null;
+
+let books = [];
+
+const grid = document.getElementById("bookGrid");
+const count = document.getElementById("bookCount");
+const status = document.getElementById("uploadStatus");
+
+// 2. LOAD BOOKS
+async function loadBooks(){
+  if(!db){
+    grid.innerHTML = '<div class="empty">Connect Supabase to activate the public library.</div>';
+    count.textContent = "Setup required";
+    return;
+  }
+
+  const {data,error} = await db
+    .from("books")
+    .select("*")
+    .order("created_at",{ascending:false});
+
+  if(error){
+    grid.innerHTML = '<div class="empty">Unable to load books. Check database setup.</div>';
+    count.textContent = "Error";
+    return;
+  }
+
+  books = data || [];
+  displayBooks();
+}
+
+// 3. DISPLAY BOOKS
+function displayBooks(){
+  const term = document.getElementById("search").value.toLowerCase();
+
+  const filtered = books.filter(book =>
+    (book.title || "").toLowerCase().includes(term) ||
+    (book.author || "").toLowerCase().includes(term) ||
+    (book.category || "").toLowerCase().includes(term)
+  );
+
+  count.textContent = filtered.length + " Books";
+
+  if(!filtered.length){
+    grid.innerHTML = '<div class="empty">📚 No books found. Upload the first one!</div>';
+    return;
+  }
+
+  grid.innerHTML = filtered.map(book => `
+    <article class="book">
+      <div class="cover">📕</div>
+      <div class="book-info">
+        <h3>${escapeHTML(book.title)}</h3>
+        <p>✍️ ${escapeHTML(book.author)}</p>
+        <p>📂 ${escapeHTML(book.category || "Other")}</p>
+        <p class="desc">${escapeHTML(book.description || "No description available.")}</p>
+        <div class="book-actions">
+          <button class="download" onclick="downloadBook('${book.id}')">⬇ Download</button>
+        </div>
+      </div>
+    </article>
+  `).join("");
+}
+
+// Prevent HTML injection from book metadata
+function escapeHTML(value){
+  return String(value ?? "").replace(/[&<>"']/g, char => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",
+    '"':"&quot;","'":"&#39;"
+  })[char]);
+}
+
+// 4. UPLOAD BOOKS
+document.getElementById("uploadForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+
+  if(!db){
+    status.textContent = "Please configure Supabase first.";
+    return;
+  }
+
+  const file = document.getElementById("bookFile").files[0];
+
+  if(!file) return;
+
+  if(file.size > 25 * 1024 * 1024){
+    status.textContent = "Maximum file size is 25 MB.";
+    return;
+  }
+
+  const allowed = /\.(pdf|epub|doc|docx|txt)$/i;
+  if(!allowed.test(file.name)){
+    status.textContent = "Unsupported file format.";
+    return;
+  }
+
+  const btn = document.getElementById("uploadBtn");
+  btn.disabled = true;
+  status.textContent = "Uploading book...";
+
+  try{
+    const safeName = crypto.randomUUID() + "-" +
+      file.name.replace(/[^a-zA-Z0-9._-]/g,"_");
+
+    const {error:storageError} = await db.storage
+      .from("books")
+      .upload(safeName,file,{upsert:false});
+
+    if(storageError) throw storageError;
+
+    const {error:dbError} = await db.from("books").insert({
+      title:document.getElementById("title").value.trim(),
+      author:document.getElementById("author").value.trim(),
+      category:document.getElementById("category").value,
+      description:document.getElementById("description").value.trim(),
+      file_path:safeName
+    });
+
+    if(dbError){
+      await db.storage.from("books").remove([safeName]);
+      throw dbError;
+    }
+
+    status.textContent = "✅ Book uploaded successfully!";
+    e.target.reset();
+    await loadBooks();
+
+  }catch(error){
+    console.error(error);
+    status.textContent = "Upload failed: " + error.message;
+  }finally{
+    btn.disabled = false;
+  }
+});
+
+// 5. DOWNLOAD BOOKS
+async function downloadBook(id){
+  const book = books.find(b => b.id === id);
+  if(!book) return;
+
+  const {data,error} = await db.storage
+    .from("books")
+    .createSignedUrl(book.file_path,60);
+
+  if(error){
+    alert("Download failed: " + error.message);
+    return;
+  }
+
+  const a = document.createElement("a");
+  a.href = data.signedUrl;
+  a.download = "";
+  a.target = "_blank";
+  a.rel = "noopener";
+  a.click();
+}
+
+// 6. SEARCH
+document.getElementById("search")
+  .addEventListener("input",displayBooks);
+
+// 7. REAL-TIME COMMUNITY UPDATES
+if(db){
+  loadBooks();
+
+  db.channel("library-updates")
+    .on("postgres_changes",{
+      event:"*",
+      schema:"public",
+      table:"books"
+    },loadBooks)
+    .subscribe();
+}else{
+  loadBooks();
+}
+</script>
+</body>
+</html>
