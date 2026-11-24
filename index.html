@@ -1,70 +1,332 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>OpenLibrary | Community Library</title>
+<title>OpenLibrary | Monolith Edition</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:Arial,sans-serif;background:#f5f6fa;color:#20243a}
-header{background:#171b36;color:white;padding:22px 7%;display:flex;
-justify-content:space-between;align-items:center;flex-wrap:wrap;gap:15px}
-.logo{font-size:25px;font-weight:bold}
-.logo span{color:#9b8cff}
-.hero{text-align:center;padding:55px 20px;background:linear-gradient(130deg,#242653,#6655b9);color:white}
-.hero h1{font-size:36px;margin-bottom:12px}
-.hero p{color:#ddd;margin-bottom:22px}
-.search{width:min(500px,90%);padding:15px;border:0;border-radius:10px;font-size:16px}
-.container{max-width:1150px;margin:35px auto;padding:0 20px}
-.section-title{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px}
-button{cursor:pointer;border:0;border-radius:8px;padding:12px 18px;font-weight:bold}
-.primary{background:#705ce4;color:white}
-.primary:hover{background:#5542c5}
-.upload-box{background:white;padding:25px;border-radius:15px;margin-bottom:35px;box-shadow:0 4px 20px #1720440c}
-input,textarea,select{width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;margin:8px 0 15px;font-size:15px}
-label{font-size:14px;font-weight:bold}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px}
-.book{background:white;border-radius:13px;overflow:hidden;box-shadow:0 4px 15px #17204410;display:flex;flex-direction:column}
-.cover{height:175px;background:linear-gradient(140deg,#302c70,#9c80db);display:flex;align-items:center;justify-content:center;color:white;font-size:55px}
-.book-info{padding:17px;flex:1;display:flex;flex-direction:column}
-.book-info h3{font-size:18px;margin-bottom:7px;overflow-wrap:anywhere}
-.book-info p{color:#777;font-size:13px;margin-bottom:9px;overflow-wrap:anywhere}
-.book-info .desc{line-height:1.5;flex:1}
-.book-actions{display:flex;gap:8px;margin-top:15px}
-.book-actions button{flex:1;font-size:12px;padding:10px 5px}
-.download{background:#e9e5ff;color:#5943c6}
-.empty{text-align:center;padding:45px;color:#888;grid-column:1/-1}
-.status{font-size:13px;margin:8px 0;color:#705ce4}
-footer{text-align:center;padding:28px;background:#171b36;color:#bbb;margin-top:50px}
-.hidden{display:none}
-@media(max-width:600px){.hero h1{font-size:28px}header{padding:18px 5%}}
+:root {
+  --bg: #09090b;
+  --panel: #121215;
+  --panel-border: #27272a;
+  --text-main: #f4f4f5;
+  --text-muted: #a1a1aa;
+  --accent: #ffffff;
+  --accent-invert: #000000;
+  --input-bg: #18181b;
+  --focus-ring: #52525b;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif; }
+
+body {
+  background-color: var(--bg);
+  color: var(--text-main);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Header */
+header {
+  border-bottom: 1px solid var(--panel-border);
+  padding: 20px 8%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  backdrop-filter: blur(10px);
+}
+.logo {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  text-transform: uppercase;
+}
+.logo span { color: var(--text-muted); font-weight: 300; }
+.badge {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border: 1px solid var(--panel-border);
+  padding: 4px 10px;
+  border-radius: 99px;
+  color: var(--text-muted);
+}
+
+/* Hero Section */
+.hero {
+  padding: 80px 20px 60px;
+  text-align: center;
+  max-width: 800px;
+  margin: 0 auto;
+}
+.hero h1 {
+  font-size: clamp(40px, 6vw, 64px);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+  margin-bottom: 16px;
+  text-transform: uppercase;
+}
+.hero p {
+  color: var(--text-muted);
+  font-size: 18px;
+  margin-bottom: 32px;
+  font-weight: 400;
+}
+.search-wrapper {
+  position: relative;
+  max-width: 500px;
+  margin: 0 auto;
+}
+.search {
+  width: 100%;
+  padding: 16px 20px;
+  background: var(--input-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  color: var(--text-main);
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+.search:focus {
+  border-color: var(--accent);
+}
+.search::placeholder { color: var(--text-muted); }
+
+/* Main Container */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px 80px;
+}
+
+.section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 24px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--panel-border);
+}
+.section-title h2 {
+  font-size: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+}
+.section-title span {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* Form Styling */
+.upload-box {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  padding: 32px;
+  border-radius: 16px;
+  margin-bottom: 60px;
+}
+label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-top: 16px;
+}
+input, select, textarea {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--input-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  color: var(--text-main);
+  font-size: 14px;
+  margin-top: 6px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--accent);
+}
+input[type="file"] {
+  cursor: pointer;
+  color: var(--text-muted);
+}
+input[type="file"]::file-selector-button {
+  background: var(--accent);
+  color: var(--accent-invert);
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 12px;
+  margin-right: 12px;
+  cursor: pointer;
+}
+
+button.primary {
+  width: 100%;
+  margin-top: 24px;
+  background: var(--accent);
+  color: var(--accent-invert);
+  border: 0;
+  border-radius: 8px;
+  padding: 14px;
+  font-weight: 700;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+button.primary:hover { opacity: 0.85; }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Book Grid */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 24px;
+}
+.book {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+.book:hover {
+  border-color: var(--focus-ring);
+  transform: translateY(-2px);
+}
+.cover {
+  height: 140px;
+  background: #000;
+  border-bottom: 1px solid var(--panel-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 24px;
+  letter-spacing: 0.2em;
+  color: var(--panel-border);
+}
+.book-info {
+  padding: 20px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.book-info h3 {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  line-height: 1.3;
+}
+.book-info .author {
+  color: var(--text-muted);
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+.book-info .tag {
+  display: inline-block;
+  align-self: flex-start;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid var(--panel-border);
+  padding: 3px 8px;
+  border-radius: 4px;
+  margin-bottom: 14px;
+  color: var(--text-muted);
+}
+.book-info .desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  flex: 1;
+  margin-bottom: 20px;
+}
+.book-actions button {
+  width: 100%;
+  padding: 10px;
+  background: transparent;
+  color: var(--text-main);
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.book-actions button:hover {
+  background: var(--accent);
+  color: var(--accent-invert);
+  border-color: var(--accent);
+}
+
+.empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-muted);
+  grid-column: 1 / -1;
+  font-size: 14px;
+  border: 1px dashed var(--panel-border);
+  border-radius: 12px;
+}
+.status {
+  font-size: 12px;
+  margin-top: 12px;
+  color: var(--text-muted);
+}
+
+footer {
+  border-top: 1px solid var(--panel-border);
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
 </style>
 </head>
 <body>
 
 <header>
-  <div class="logo">📚 Open<span>Library</span></div>
-  <div>FREE COMMUNITY BOOKS</div>
+  <div class="logo">Open<span>Lib</span></div>
+  <div class="badge">Public Domain</div>
 </header>
 
 <section class="hero">
-  <h1>Discover. Read. Share.</h1>
-  <p>A free community library where everyone can share knowledge.</p>
-  <input class="search" id="search" placeholder="🔍 Search books or authors...">
+  <h1>Knowledge.<br>Unfiltered.</h1>
+  <p>An open architectural archive for public knowledge distribution.</p>
+  <div class="search-wrapper">
+    <input class="search" id="search" placeholder="Search title, author, or tag...">
+  </div>
 </section>
 
 <main class="container">
 
 <section class="upload-box">
   <div class="section-title">
-    <h2>📤 Share a Book</h2>
-    <span>Free community uploads</span>
+    <h2>[ Upload Record ]</h2>
+    <span>Free Repository Upload</span>
   </div>
   <form id="uploadForm">
     <label>Book Title *</label>
-    <input id="title" required placeholder="Enter book title">
+    <input id="title" required placeholder="Title of publication">
 
     <label>Author *</label>
     <input id="author" required placeholder="Author name">
@@ -81,31 +343,29 @@ footer{text-align:center;padding:28px;background:#171b36;color:#bbb;margin-top:5
     </select>
 
     <label>Description</label>
-    <textarea id="description" rows="3" placeholder="About this book..."></textarea>
+    <textarea id="description" rows="3" placeholder="Brief summary..."></textarea>
 
-    <label>Select Book File (PDF, EPUB, DOC, etc.) *</label>
+    <label>Source File (PDF, EPUB, DOC, TXT) *</label>
     <input type="file" id="bookFile" accept=".pdf,.epub,.doc,.docx,.txt" required>
 
-    <button class="primary" id="uploadBtn" type="submit">Upload Book</button>
+    <button class="primary" id="uploadBtn" type="submit">Commit to Archive</button>
     <p class="status" id="uploadStatus"></p>
   </form>
 </section>
 
 <section>
   <div class="section-title">
-    <h2>📖 Explore Library</h2>
-    <span id="bookCount">Loading books...</span>
+    <h2>[ Archive Index ]</h2>
+    <span id="bookCount">Loading index...</span>
   </div>
   <div class="grid" id="bookGrid">
-    <div class="empty">Loading library...</div>
+    <div class="empty">Loading library contents...</div>
   </div>
 </section>
 </main>
 
 <footer>
-  <h3>📚 OpenLibrary</h3>
-  <p>Knowledge belongs to everyone.</p>
-  <p style="margin-top:10px">Built for a community that loves reading.</p>
+  <p>OPENLIBRARY / KNOWLEDGE IS PUBLIC</p>
 </footer>
 
 <script>
@@ -130,8 +390,8 @@ const status = document.getElementById("uploadStatus");
 // 2. LOAD BOOKS
 async function loadBooks(){
   if(!db){
-    grid.innerHTML = '<div class="empty">Connect Supabase to activate the public library.</div>';
-    count.textContent = "Setup required";
+    grid.innerHTML = '<div class="empty">DB_OFFLINE: Connect Supabase to unlock public archive.</div>';
+    count.textContent = "[ Offline ]";
     return;
   }
 
@@ -141,8 +401,8 @@ async function loadBooks(){
     .order("created_at",{ascending:false});
 
   if(error){
-    grid.innerHTML = '<div class="empty">Unable to load books. Check database setup.</div>';
-    count.textContent = "Error";
+    grid.innerHTML = '<div class="empty">ERROR: Failed to fetch index entries.</div>';
+    count.textContent = "[ Error ]";
     return;
   }
 
@@ -160,30 +420,29 @@ function displayBooks(){
     (book.category || "").toLowerCase().includes(term)
   );
 
-  count.textContent = filtered.length + " Books";
+  count.textContent = filtered.length + " Record(s)";
 
   if(!filtered.length){
-    grid.innerHTML = '<div class="empty">📚 No books found. Upload the first one!</div>';
+    grid.innerHTML = '<div class="empty">No matching records found.</div>';
     return;
   }
 
   grid.innerHTML = filtered.map(book => `
     <article class="book">
-      <div class="cover">📕</div>
+      <div class="cover">FILE</div>
       <div class="book-info">
         <h3>${escapeHTML(book.title)}</h3>
-        <p>✍️ ${escapeHTML(book.author)}</p>
-        <p>📂 ${escapeHTML(book.category || "Other")}</p>
-        <p class="desc">${escapeHTML(book.description || "No description available.")}</p>
+        <div class="author">By ${escapeHTML(book.author)}</div>
+        <div class="tag">${escapeHTML(book.category || "Other")}</div>
+        <p class="desc">${escapeHTML(book.description || "No description provided.")}</p>
         <div class="book-actions">
-          <button class="download" onclick="downloadBook('${book.id}')">⬇ Download</button>
+          <button onclick="downloadBook('${book.id}')">DOWNLOAD</button>
         </div>
       </div>
     </article>
   `).join("");
 }
 
-// Prevent HTML injection from book metadata
 function escapeHTML(value){
   return String(value ?? "").replace(/[&<>"']/g, char => ({
     "&":"&amp;","<":"&lt;",">":"&gt;",
@@ -196,7 +455,7 @@ document.getElementById("uploadForm").addEventListener("submit",async e=>{
   e.preventDefault();
 
   if(!db){
-    status.textContent = "Please configure Supabase first.";
+    status.textContent = "Error: Database unconfigured.";
     return;
   }
 
@@ -205,19 +464,19 @@ document.getElementById("uploadForm").addEventListener("submit",async e=>{
   if(!file) return;
 
   if(file.size > 25 * 1024 * 1024){
-    status.textContent = "Maximum file size is 25 MB.";
+    status.textContent = "Error: Payload exceeds 25 MB max limit.";
     return;
   }
 
   const allowed = /\.(pdf|epub|doc|docx|txt)$/i;
   if(!allowed.test(file.name)){
-    status.textContent = "Unsupported file format.";
+    status.textContent = "Error: Unsupported file signature.";
     return;
   }
 
   const btn = document.getElementById("uploadBtn");
   btn.disabled = true;
-  status.textContent = "Uploading book...";
+  status.textContent = "Processing payload...";
 
   try{
     const safeName = crypto.randomUUID() + "-" +
@@ -242,13 +501,13 @@ document.getElementById("uploadForm").addEventListener("submit",async e=>{
       throw dbError;
     }
 
-    status.textContent = "✅ Book uploaded successfully!";
+    status.textContent = "Success: Entry recorded.";
     e.target.reset();
     await loadBooks();
 
   }catch(error){
     console.error(error);
-    status.textContent = "Upload failed: " + error.message;
+    status.textContent = "Transaction failed: " + error.message;
   }finally{
     btn.disabled = false;
   }
@@ -264,7 +523,7 @@ async function downloadBook(id){
     .createSignedUrl(book.file_path,60);
 
   if(error){
-    alert("Download failed: " + error.message);
+    alert("Download error: " + error.message);
     return;
   }
 
